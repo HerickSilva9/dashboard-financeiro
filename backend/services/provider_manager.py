@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from backend.providers.base import MarketDataProvider
 from backend.providers.brapi_provider import BrapiProvider
+from backend.providers.yahoo_provider import YahooProvider
 
 
 class ProviderManager:
@@ -13,7 +14,8 @@ class ProviderManager:
     
     def __init__(self):
         self._providers: Dict[str, Type[MarketDataProvider]] = {
-            'brapi': BrapiProvider
+            'brapi': BrapiProvider,
+            'yahoo': YahooProvider
         }
         self._default_provider = 'brapi'
     

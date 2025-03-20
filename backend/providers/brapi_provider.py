@@ -10,7 +10,7 @@ from tenacity import (
 from fastapi import HTTPException
 
 from backend.providers.base import MarketDataProvider
-from backend.models import AssetList, HistoricalPrice, PricePoint, TimeRange
+from backend.models import AssetList, HistoricalPrice, PricePoint, TimeRange, APIError
 from backend.config import BRAPI_TOKEN, API_URL
 
 
@@ -50,23 +50,45 @@ class BrapiProvider(MarketDataProvider):
             data = response.json()
             
             if not data:
-                raise HTTPException(status_code=404, detail="No data available")
+                raise HTTPException(
+                    status_code=404,
+                    detail=APIError(
+                        code="NO_DATA_AVAILABLE",
+                        message="Nenhum dado disponível",
+                        details={"endpoint": endpoint, "ticker": params.get('ticker', '')}
+                    ).dict()
+                )
             
             return data
             
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
-                raise HTTPException(status_code=404, detail="No data available")
+                raise HTTPException(
+                    status_code=404,
+                    detail=APIError(
+                        code="NO_DATA_AVAILABLE",
+                        message="Nenhum dado disponível",
+                        details={"endpoint": endpoint, "ticker": params.get('ticker', '')}
+                    ).dict()
+                )
             else:
                 raise HTTPException(
-                    status_code=e.response.status_code, 
-                    detail=f"Failed to fetch data from API: {str(e)}"
+                    status_code=e.response.status_code,
+                    detail=APIError(
+                        code="API_ERROR",
+                        message=f"Erro ao buscar dados da API: {str(e)}",
+                        details={"status_code": e.response.status_code, "ticker": params.get('ticker', '')}
+                    ).dict()
                 )
                 
         except httpx.RequestError as e:
             raise HTTPException(
-                status_code=500, 
-                detail=f"Failed to fetch data from API: {str(e)}"
+                status_code=500,
+                detail=APIError(
+                    code="REQUEST_ERROR",
+                    message=f"Erro ao fazer requisição: {str(e)}",
+                    details={"error": str(e), "ticker": params.get('ticker', '')}
+                ).dict()
             )
     
     async def get_available_assets(self, search: Optional[str] = None) -> AssetList:
@@ -93,7 +115,14 @@ class BrapiProvider(MarketDataProvider):
         
         # Verificar se há resultados válidos na resposta
         if 'results' not in data or not data['results']:
-            raise HTTPException(status_code=404, detail=f"No data available for ticker {ticker}")
+            raise HTTPException(
+                status_code=404,
+                detail=APIError(
+                    code="NO_DATA_AVAILABLE",
+                    message=f"Nenhum dado disponível para o ativo {ticker}",
+                    details={"ticker": ticker}
+                ).dict()
+            )
         
         result = data['results'][0]
         name = result.get('longName', ticker)

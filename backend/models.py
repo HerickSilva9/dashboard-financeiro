@@ -27,12 +27,18 @@ class HistoricalPrice(BaseModel):
     prices: List[PricePoint] = Field(default_factory=list)
     
 
+class APIError(BaseModel):
+    """Modelo para erros da API."""
+    code: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+
 class APIResponse(BaseModel):
-    """Modelo genérico para respostas da API."""
-    success: bool = True
-    message: Optional[str] = None
-    data: Optional[Any] = None
-    error: Optional[str] = None
+    """Modelo base para todas as respostas da API."""
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    error: Optional[APIError] = None
 
 
 class TimeRange(BaseModel):

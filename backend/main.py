@@ -52,7 +52,9 @@ async def read_root():
     """Rota raiz para verificar se a API está funcionando."""
     return APIResponse(
         success=True,
-        message="API de dados de mercado financeiro está operacional!"
+        data={
+            "message": "API de dados de mercado financeiro está operacional!"
+        }
     )
 
 # Rota para listar provedores disponíveis

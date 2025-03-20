@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional
+from fastapi.responses import JSONResponse
+from fastapi import status
 
-from backend.models import AssetList, HistoricalPrice, TimeRange, APIResponse
+from backend.models import AssetList, HistoricalPrice, TimeRange, APIResponse, APIError
 from backend.services.provider_manager import provider_manager
 
 
@@ -28,22 +30,38 @@ async def get_available_assets(
             assets = await data_provider.get_available_assets(search)
             return APIResponse(
                 success=True,
-                data=assets
+                data=assets.dict()
             )
     except ValueError as e:
-        return APIResponse(
-            success=False,
-            error=str(e)
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=APIResponse(
+                success=False,
+                error=APIError(
+                    code="INVALID_PROVIDER",
+                    message=str(e)
+                )
+            ).dict()
         )
     except HTTPException as e:
-        return APIResponse(
-            success=False,
-            error=e.detail
+        return JSONResponse(
+            status_code=e.status_code,
+            content=APIResponse(
+                success=False,
+                error=APIError(**e.detail)
+            ).dict()
         )
     except Exception as e:
-        return APIResponse(
-            success=False,
-            error=f"Unexpected error: {str(e)}"
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=APIResponse(
+                success=False,
+                error=APIError(
+                    code="INTERNAL_ERROR",
+                    message="Erro interno do servidor",
+                    details={"error": str(e)}
+                )
+            ).dict()
         )
 
 
@@ -93,17 +111,33 @@ async def get_historical_prices(
                 }
             )
     except ValueError as e:
-        return APIResponse(
-            success=False,
-            error=str(e)
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=APIResponse(
+                success=False,
+                error=APIError(
+                    code="INVALID_PROVIDER",
+                    message=str(e)
+                )
+            ).dict()
         )
     except HTTPException as e:
-        return APIResponse(
-            success=False,
-            error=e.detail
+        return JSONResponse(
+            status_code=e.status_code,
+            content=APIResponse(
+                success=False,
+                error=APIError(**e.detail)
+            ).dict()
         )
     except Exception as e:
-        return APIResponse(
-            success=False,
-            error=f"Unexpected error: {str(e)}"
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=APIResponse(
+                success=False,
+                error=APIError(
+                    code="INTERNAL_ERROR",
+                    message="Erro interno do servidor",
+                    details={"error": str(e)}
+                )
+            ).dict()
         )
