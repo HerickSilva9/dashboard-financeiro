@@ -71,7 +71,7 @@ def test_read_root():
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
-    assert data['message'] == "API de dados de mercado financeiro está operacional!"
+    assert data['data']['message'] == "API de dados de mercado financeiro está operacional!"
 
 # Teste para /available_assets
 def test_available_assets():
@@ -123,11 +123,14 @@ def test_ticker_quote():
 # Teste para /quote/{ticker} com ticker inválido
 def test_ticker_quote_invalid():
     response = client.get('/market/prices/XYZ123?range=5d&interval=1d')
-    assert response.status_code == 200
+    assert response.status_code == 404
     data = response.json()
     assert data['success'] == False
     assert 'error' in data
-    assert data['error'] == 'No data available'
+    error = data['error']
+    assert error['code'] == 'NO_DATA_AVAILABLE'
+    assert 'Nenhum dado disponível' in error['message']
+    assert 'ticker' in error['details']
 
 # Teste para /quote/{ticker} com diferentes parâmetros
 def test_ticker_quote_different_range():
