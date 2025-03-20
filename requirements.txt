@@ -1,8 +1,7 @@
-dotenv==0.9.9
 fastapi==0.115.11
 httpx==0.28.1
+pydantic==2.7.2
 pytest==8.3.5
 python-dotenv==1.0.1
-requests==2.32.3
 tenacity==9.0.0
 uvicorn==0.34.0

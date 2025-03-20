@@ -1,0 +1,34 @@
+from abc import ABC, abstractmethod
+from typing import Optional, Dict, Any
+from backend.models import AssetList, HistoricalPrice, TimeRange
+
+
+class MarketDataProvider(ABC):
+    """Interface base para provedores de dados de mercado."""
+    
+    @abstractmethod
+    async def get_available_assets(self, search: Optional[str] = None) -> AssetList:
+        """
+        Retorna uma lista de ativos disponíveis.
+        
+        Args:
+            search: Termo de busca opcional para filtrar os resultados.
+            
+        Returns:
+            AssetList: Lista de ativos encontrados.
+        """
+        pass
+    
+    @abstractmethod
+    async def get_historical_prices(self, ticker: str, time_range: TimeRange) -> HistoricalPrice:
+        """
+        Retorna preços históricos para um ticker específico.
+        
+        Args:
+            ticker: Símbolo do ativo.
+            time_range: Configuração de intervalo de tempo.
+            
+        Returns:
+            HistoricalPrice: Dados históricos de preços.
+        """
+        pass
