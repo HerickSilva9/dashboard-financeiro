@@ -23,7 +23,6 @@ def test_env_file_exists():
     # Verifica se as variáveis necessárias estão definidas
     assert os.getenv('BRAPI_TOKEN'), "BRAPI_TOKEN não está definido no arquivo .env"
     assert os.getenv('API_URL'), "API_URL não está definido no arquivo .env"
-    assert os.getenv('DEFAULT_PROVIDER'), "DEFAULT_PROVIDER não está definido no arquivo .env"
     
     # Verifica se o token não está vazio
     assert os.getenv('BRAPI_TOKEN') != '', "BRAPI_TOKEN está vazio no arquivo .env"
@@ -36,7 +35,8 @@ def test_env_file_exists():
 async def test_provider_manager_initialization():
     manager = ProviderManager()
     assert 'brapi' in manager._providers
-    assert manager._default_provider == 'brapi'
+    assert manager._default_providers['get_available_assets'] == 'brapi'
+    assert manager._default_providers['get_historical_prices'] == 'yahoo'
 
 @pytest.mark.asyncio
 async def test_provider_manager_registration():
@@ -46,16 +46,21 @@ async def test_provider_manager_registration():
     assert 'test_provider' in manager._providers
 
 @pytest.mark.asyncio
-async def test_provider_manager_set_default():
+async def test_provider_manager_set_default_for_route():
     manager = ProviderManager()
     manager.register_provider('test_provider', BrapiProvider)
-    manager.set_default_provider('test_provider')
-    assert manager._default_provider == 'test_provider'
+    manager.set_default_provider_for_route('get_available_assets', 'test_provider')
+    assert manager._default_providers['get_available_assets'] == 'test_provider'
 
 @pytest.mark.asyncio
 async def test_provider_manager_get_provider():
     manager = ProviderManager()
-    async with manager.get_provider() as provider:
+    # Testa provedor padrão para get_available_assets
+    async with manager.get_provider(route_name='get_available_assets') as provider:
+        assert isinstance(provider, BrapiProvider)
+    
+    # Testa provedor específico
+    async with manager.get_provider('brapi') as provider:
         assert isinstance(provider, BrapiProvider)
 
 @pytest.mark.asyncio
@@ -73,7 +78,7 @@ def test_read_root():
     assert data['success'] == True
     assert data['data']['message'] == "API de dados de mercado financeiro está operacional!"
 
-# Teste para /available_assets
+# Teste para /available_assets (provedor padrão: brapi)
 def test_available_assets():
     response = client.get('/market/assets')
     assert response.status_code == 200
@@ -101,7 +106,7 @@ def test_available_assets_with_search():
     assert len(data['data']['stocks']) > 0
     assert 'MGLU3' in data['data']['stocks']
     
-# Teste para /quote/{ticker} com parâmetros válidos
+# Teste para /quote/{ticker} com parâmetros válidos (provedor padrão: yahoo)
 def test_ticker_quote():
     response = client.get('/market/prices/MGLU3?range=5d&interval=1d')
     assert response.status_code == 200
@@ -116,7 +121,7 @@ def test_ticker_quote():
     assert 'symbol' in result
     assert 'historicalDataPrice' in result
     assert isinstance(result['historicalDataPrice'], list)
-    assert result['symbol'] == 'MGLU3'
+    assert result['symbol'] == 'MGLU3.SA'
     assert len(result['historicalDataPrice']) > 0
     assert all(key in result['historicalDataPrice'][0] for key in ['date', 'open', 'high', 'low', 'close', 'volume'])
 
@@ -128,8 +133,8 @@ def test_ticker_quote_invalid():
     assert data['success'] == False
     assert 'error' in data
     error = data['error']
-    assert error['code'] == 'NO_DATA_AVAILABLE'
-    assert 'Nenhum dado disponível' in error['message']
+    assert error['code'] == 'ASSET_NOT_FOUND'
+    assert 'Ativo XYZ123.SA não encontrado' in error['message']
     assert 'ticker' in error['details']
 
 # Teste para /quote/{ticker} com diferentes parâmetros

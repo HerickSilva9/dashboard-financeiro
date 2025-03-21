@@ -19,20 +19,23 @@ def test_env_file_exists():
     
     # Carrega as variáveis do arquivo
     load_dotenv(env_path)
-    
-    # Verifica se as variáveis necessárias estão definidas
-    assert os.getenv('DEFAULT_PROVIDER'), "DEFAULT_PROVIDER não está definido no arquivo .env"
 
 # Testes do ProviderManager com Yahoo Finance
 @pytest.mark.asyncio
 async def test_provider_manager_yahoo_initialization():
     manager = ProviderManager()
     assert 'yahoo' in manager._providers
-    assert manager._default_provider == 'brapi'
+    assert manager._default_providers['get_historical_prices'] == 'yahoo'
+    assert manager._default_providers['get_available_assets'] == 'brapi'
 
 @pytest.mark.asyncio
 async def test_provider_manager_yahoo_get_provider():
     manager = ProviderManager()
+    # Testa provedor padrão para get_historical_prices
+    async with manager.get_provider(route_name='get_historical_prices') as provider:
+        assert isinstance(provider, YahooProvider)
+    
+    # Testa provedor específico
     async with manager.get_provider('yahoo') as provider:
         assert isinstance(provider, YahooProvider)
 
@@ -49,9 +52,9 @@ def test_yahoo_available_assets():
     assert isinstance(data['data']['stocks'], list)
     assert isinstance(data['data']['indexes'], list)
 
-# Teste para /quote/{ticker} com Yahoo Finance
+# Teste para /quote/{ticker} com Yahoo Finance (provedor padrão)
 def test_yahoo_ticker_quote():
-    response = client.get('/market/prices/PETR4?range=5d&interval=1d&provider=yahoo')
+    response = client.get('/market/prices/PETR4?range=5d&interval=1d')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
@@ -70,7 +73,7 @@ def test_yahoo_ticker_quote():
 
 # Teste para /quote/{ticker} com ticker inválido no Yahoo Finance
 def test_yahoo_ticker_quote_invalid():
-    response = client.get('/market/prices/XYZ123?range=5d&interval=1d&provider=yahoo')
+    response = client.get('/market/prices/XYZ123?range=5d&interval=1d')
     assert response.status_code == 404
     data = response.json()
     assert data['success'] == False
@@ -84,7 +87,7 @@ def test_yahoo_ticker_quote_invalid():
 def test_yahoo_ticker_quote_different_intervals():
     intervals = ['1d', '1wk', '1mo']
     for interval in intervals:
-        response = client.get(f'/market/prices/PETR4?range=1mo&interval={interval}&provider=yahoo')
+        response = client.get(f'/market/prices/PETR4?range=1mo&interval={interval}')
         assert response.status_code == 200
         data = response.json()
         assert data['success'] == True
@@ -101,7 +104,7 @@ def test_yahoo_ticker_quote_different_intervals():
 def test_yahoo_ticker_quote_different_ranges():
     ranges = ['1d', '5d', '1mo', '3mo', '6mo', '1y']
     for range_value in ranges:
-        response = client.get(f'/market/prices/PETR4?range={range_value}&interval=1d&provider=yahoo')
+        response = client.get(f'/market/prices/PETR4?range={range_value}&interval=1d')
         assert response.status_code == 200
         data = response.json()
         assert data['success'] == True
@@ -116,7 +119,7 @@ def test_yahoo_ticker_quote_different_ranges():
 
 # Teste para verificar se o sufixo .SA é adicionado corretamente
 def test_yahoo_ticker_suffix():
-    response = client.get('/market/prices/PETR4?range=1d&interval=1d&provider=yahoo')
+    response = client.get('/market/prices/PETR4?range=1d&interval=1d')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
@@ -124,7 +127,7 @@ def test_yahoo_ticker_suffix():
 
 # Teste para verificar se o sufixo .SA não é duplicado
 def test_yahoo_ticker_suffix_no_duplicate():
-    response = client.get('/market/prices/PETR4.SA?range=1d&interval=1d&provider=yahoo')
+    response = client.get('/market/prices/PETR4.SA?range=1d&interval=1d')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True

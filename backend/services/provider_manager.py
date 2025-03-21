@@ -17,7 +17,11 @@ class ProviderManager:
             'brapi': BrapiProvider,
             'yahoo': YahooProvider
         }
-        self._default_provider = 'brapi'
+        # Provedores padrão por rota
+        self._default_providers: Dict[str, str] = {
+            'get_available_assets': 'brapi',
+            'get_historical_prices': 'yahoo'
+        }
     
     def register_provider(self, name: str, provider_class: Type[MarketDataProvider]) -> None:
         """
@@ -29,27 +33,29 @@ class ProviderManager:
         """
         self._providers[name] = provider_class
     
-    def set_default_provider(self, name: str) -> None:
+    def set_default_provider_for_route(self, route_name: str, provider_name: str) -> None:
         """
-        Define o provedor padrão.
+        Define o provedor padrão para uma rota específica.
         
         Args:
-            name: Nome do provedor.
+            route_name: Nome da rota (ex: 'get_available_assets', 'get_historical_prices').
+            provider_name: Nome do provedor.
             
         Raises:
             ValueError: Se o provedor não estiver registrado.
         """
-        if name not in self._providers:
-            raise ValueError(f"Provider '{name}' not registered")
-        self._default_provider = name
+        if provider_name not in self._providers:
+            raise ValueError(f"Provider '{provider_name}' not registered")
+        self._default_providers[route_name] = provider_name
     
     @asynccontextmanager
-    async def get_provider(self, provider_name: str = None) -> AsyncGenerator[MarketDataProvider, None]:
+    async def get_provider(self, provider_name: str = None, route_name: str = None) -> AsyncGenerator[MarketDataProvider, None]:
         """
         Retorna uma instância do provedor solicitado.
         
         Args:
-            provider_name: Nome do provedor. Se None, usa o provedor padrão.
+            provider_name: Nome do provedor. Se None, usa o provedor padrão da rota.
+            route_name: Nome da rota para determinar o provedor padrão.
             
         Returns:
             Uma instância do provedor implementando MarketDataProvider.
@@ -57,12 +63,13 @@ class ProviderManager:
         Raises:
             ValueError: Se o provedor não estiver registrado.
         """
-        name = provider_name or self._default_provider
+        if provider_name is None and route_name is not None:
+            provider_name = self._default_providers.get(route_name, 'brapi')
         
-        if name not in self._providers:
-            raise ValueError(f"Provider '{name}' not registered")
+        if provider_name not in self._providers:
+            raise ValueError(f"Provider '{provider_name}' not registered")
         
-        provider_class = self._providers[name]
+        provider_class = self._providers[provider_name]
         provider = provider_class()
         
         try:

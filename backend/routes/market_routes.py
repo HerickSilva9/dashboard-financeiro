@@ -26,7 +26,7 @@ async def get_available_assets(
         APIResponse contendo a lista de ativos.
     """
     try:
-        async with provider_manager.get_provider(provider) as data_provider:
+        async with provider_manager.get_provider(provider, route_name='get_available_assets') as data_provider:
             assets = await data_provider.get_available_assets(search)
             return APIResponse(
                 success=True,
@@ -87,7 +87,7 @@ async def get_historical_prices(
     try:
         time_range = TimeRange(range=range, interval=interval)
         
-        async with provider_manager.get_provider(provider) as data_provider:
+        async with provider_manager.get_provider(provider, route_name='get_historical_prices') as data_provider:
             prices = await data_provider.get_historical_prices(ticker, time_range)
             return APIResponse(
                 success=True,
