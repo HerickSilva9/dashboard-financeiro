@@ -57,21 +57,6 @@ async def read_root():
         }
     )
 
-# Rota para listar provedores disponíveis
-@app.get("/providers", response_model=APIResponse)
-async def list_providers():
-    """Lista os provedores de dados disponíveis e seus provedores padrão por rota."""
-    providers = list(provider_manager._providers.keys())
-    default_providers = provider_manager._default_providers
-    
-    return APIResponse(
-        success=True,
-        data={
-            "available_providers": providers,
-            "default_providers_by_route": default_providers
-        }
-    )
-
 
 if __name__ == "__main__":
     import uvicorn
