@@ -84,7 +84,7 @@ class YahooProvider(MarketDataProvider):
                         code="ASSET_NOT_FOUND",
                         message=f"Ativo {ticker} não encontrado",
                         details={"ticker": ticker}
-                    ).dict()
+                    ).model_dump()
                 )
             
             if not info or not info.get('regularMarketPrice'):
@@ -94,7 +94,7 @@ class YahooProvider(MarketDataProvider):
                         code="ASSET_NOT_FOUND",
                         message=f"Ativo {ticker} não encontrado",
                         details={"ticker": ticker}
-                    ).dict()
+                    ).model_dump()
                 )
             
             # Converte os parâmetros de tempo
@@ -112,7 +112,7 @@ class YahooProvider(MarketDataProvider):
                         code="ASSET_NOT_FOUND",
                         message=f"Ativo {ticker} não encontrado",
                         details={"ticker": ticker}
-                    ).dict()
+                    ).model_dump()
                 )
             
             if hist.empty:
@@ -126,7 +126,7 @@ class YahooProvider(MarketDataProvider):
                             "period": period,
                             "interval": interval
                         }
-                    ).dict()
+                    ).model_dump()
                 )
             
             # Converte os dados para o formato esperado
@@ -161,5 +161,5 @@ class YahooProvider(MarketDataProvider):
                     code="INTERNAL_ERROR",
                     message="Erro ao buscar dados do Yahoo Finance",
                     details={"error": str(e), "ticker": ticker}
-                ).dict()
+                ).model_dump()
             ) 

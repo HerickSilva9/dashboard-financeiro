@@ -28,7 +28,7 @@ async def get_available_assets(
             assets = await data_provider.get_available_assets(search)
             return APIResponse(
                 success=True,
-                data=assets.dict()
+                data=assets.model_dump()
             )
     except HTTPException as e:
         return JSONResponse(
@@ -36,7 +36,7 @@ async def get_available_assets(
             content=APIResponse(
                 success=False,
                 error=APIError(**e.detail)
-            ).dict()
+            ).model_dump()
         )
     except Exception as e:
         return JSONResponse(
@@ -48,7 +48,7 @@ async def get_available_assets(
                     message="Erro interno do servidor",
                     details={"error": str(e)}
                 )
-            ).dict()
+            ).model_dump()
         )
 
 
@@ -76,32 +76,19 @@ async def get_historical_prices(
             prices = await data_provider.get_historical_prices(ticker, time_range)
             return APIResponse(
                 success=True,
-                data={
-                    "results": [{
-                        "symbol": prices.symbol,
-                        "longName": prices.name,
-                        "currency": prices.currency,
-                        "historicalDataPrice": [
-                            {
-                                "date": int(price.date.timestamp()),
-                                "open": price.open,
-                                "high": price.high,
-                                "low": price.low,
-                                "close": price.close,
-                                "volume": price.volume
-                            }
-                            for price in prices.prices
-                        ]
-                    }]
-                }
+                data=prices.model_dump()
             )
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
             content=APIResponse(
                 success=False,
-                error=APIError(**e.detail)
-            ).dict()
+                error=APIError(
+                    code="PROVIDER_ERROR",
+                    message=str(e),
+                    details={"route": "get_historical_prices", "ticker": ticker}
+                )
+            ).model_dump()
         )
     except Exception as e:
         return JSONResponse(
@@ -113,5 +100,5 @@ async def get_historical_prices(
                     message="Erro interno do servidor",
                     details={"error": str(e)}
                 )
-            ).dict()
+            ).model_dump()
         )

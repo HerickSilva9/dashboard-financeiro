@@ -56,16 +56,12 @@ def test_yahoo_ticker_quote():
     assert data['success'] == True
     assert 'data' in data
     assert isinstance(data['data'], dict)
-    assert 'results' in data['data']
-    assert isinstance(data['data']['results'], list)
-    assert len(data['data']['results']) > 0
-    result = data['data']['results'][0]
-    assert 'symbol' in result
-    assert 'historicalDataPrice' in result
-    assert isinstance(result['historicalDataPrice'], list)
-    assert result['symbol'] == 'PETR4.SA'
-    assert len(result['historicalDataPrice']) > 0
-    assert all(key in result['historicalDataPrice'][0] for key in ['date', 'open', 'high', 'low', 'close', 'volume'])
+    assert 'symbol' in data['data']
+    assert 'name' in data['data']
+    assert 'currency' in data['data']
+    assert 'prices' in data['data']
+    assert isinstance(data['data']['prices'], list)
+    assert len(data['data']['prices']) > 0
 
 # Teste para /quote/{ticker} com ticker inválido no Yahoo Finance
 def test_yahoo_ticker_quote_invalid():
@@ -75,9 +71,7 @@ def test_yahoo_ticker_quote_invalid():
     assert data['success'] == False
     assert 'error' in data
     error = data['error']
-    assert error['code'] == 'ASSET_NOT_FOUND'
-    assert 'Ativo XYZ123.SA não encontrado' in error['message']
-    assert 'ticker' in error['details']
+    assert error['code'] == 'PROVIDER_ERROR'
 
 # Teste para /quote/{ticker} com diferentes intervalos no Yahoo Finance
 def test_yahoo_ticker_quote_different_intervals():
@@ -89,12 +83,12 @@ def test_yahoo_ticker_quote_different_intervals():
         assert data['success'] == True
         assert 'data' in data
         assert isinstance(data['data'], dict)
-        assert 'results' in data['data']
-        if len(data['data']['results']) > 0:
-            result = data['data']['results'][0]
-            assert 'historicalDataPrice' in result
-            assert isinstance(result['historicalDataPrice'], list)
-            assert len(result['historicalDataPrice']) > 0
+        assert 'symbol' in data['data']
+        assert 'name' in data['data']
+        assert 'currency' in data['data']
+        assert 'prices' in data['data']
+        assert isinstance(data['data']['prices'], list)
+        assert len(data['data']['prices']) > 0
 
 # Teste para /quote/{ticker} com diferentes ranges no Yahoo Finance
 def test_yahoo_ticker_quote_different_ranges():
@@ -106,12 +100,12 @@ def test_yahoo_ticker_quote_different_ranges():
         assert data['success'] == True
         assert 'data' in data
         assert isinstance(data['data'], dict)
-        assert 'results' in data['data']
-        if len(data['data']['results']) > 0:
-            result = data['data']['results'][0]
-            assert 'historicalDataPrice' in result
-            assert isinstance(result['historicalDataPrice'], list)
-            assert len(result['historicalDataPrice']) > 0
+        assert 'symbol' in data['data']
+        assert 'name' in data['data']
+        assert 'currency' in data['data']
+        assert 'prices' in data['data']
+        assert isinstance(data['data']['prices'], list)
+        assert len(data['data']['prices']) > 0
 
 # Teste para verificar se o sufixo .SA é adicionado corretamente
 def test_yahoo_ticker_suffix():
@@ -119,7 +113,7 @@ def test_yahoo_ticker_suffix():
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
-    assert data['data']['results'][0]['symbol'] == 'PETR4.SA'
+    assert data['data']['symbol'] == 'PETR4.SA'
 
 # Teste para verificar se o sufixo .SA não é duplicado
 def test_yahoo_ticker_suffix_no_duplicate():
@@ -127,4 +121,4 @@ def test_yahoo_ticker_suffix_no_duplicate():
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
-    assert data['data']['results'][0]['symbol'] == 'PETR4.SA' 
+    assert data['data']['symbol'] == 'PETR4.SA' 

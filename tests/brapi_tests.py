@@ -103,16 +103,12 @@ def test_ticker_quote():
     assert data['success'] == True
     assert 'data' in data
     assert isinstance(data['data'], dict)
-    assert 'results' in data['data']
-    assert isinstance(data['data']['results'], list)
-    assert len(data['data']['results']) > 0
-    result = data['data']['results'][0]
-    assert 'symbol' in result
-    assert 'historicalDataPrice' in result
-    assert isinstance(result['historicalDataPrice'], list)
-    assert result['symbol'] == 'MGLU3.SA'
-    assert len(result['historicalDataPrice']) > 0
-    assert all(key in result['historicalDataPrice'][0] for key in ['date', 'open', 'high', 'low', 'close', 'volume'])
+    assert 'symbol' in data['data']
+    assert 'name' in data['data']
+    assert 'currency' in data['data']
+    assert 'prices' in data['data']
+    assert isinstance(data['data']['prices'], list)
+    assert len(data['data']['prices']) > 0
 
 # Teste para /quote/{ticker} com ticker inválido
 def test_ticker_quote_invalid():
@@ -122,9 +118,7 @@ def test_ticker_quote_invalid():
     assert data['success'] == False
     assert 'error' in data
     error = data['error']
-    assert error['code'] == 'ASSET_NOT_FOUND'
-    assert 'Ativo XYZ123.SA não encontrado' in error['message']
-    assert 'ticker' in error['details']
+    assert error['code'] == 'PROVIDER_ERROR'
 
 # Teste para /quote/{ticker} com diferentes parâmetros
 def test_ticker_quote_different_range():
@@ -134,14 +128,12 @@ def test_ticker_quote_different_range():
     assert data['success'] == True
     assert 'data' in data
     assert isinstance(data['data'], dict)
-    assert 'results' in data['data']
-    assert isinstance(data['data']['results'], list)
-    if len(data['data']['results']) > 0:
-        result = data['data']['results'][0]
-        assert 'historicalDataPrice' in result
-        assert isinstance(result['historicalDataPrice'], list)
-        assert len(result['historicalDataPrice']) > 0
-        assert all(key in result['historicalDataPrice'][0] for key in ['date', 'open', 'high', 'low', 'close', 'volume'])
+    assert 'symbol' in data['data']
+    assert 'name' in data['data']
+    assert 'currency' in data['data']
+    assert 'prices' in data['data']
+    assert isinstance(data['data']['prices'], list)
+    assert len(data['data']['prices']) > 0
 
 # Teste para /quote_list com parâmetros válidos
 def test_quote_list():

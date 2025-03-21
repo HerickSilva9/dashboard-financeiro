@@ -56,7 +56,7 @@ class BrapiProvider(MarketDataProvider):
                         code="NO_DATA_AVAILABLE",
                         message="Nenhum dado disponível",
                         details={"endpoint": endpoint, "ticker": params.get('ticker', '')}
-                    ).dict()
+                    ).model_dump()
                 )
             
             return data
@@ -69,7 +69,7 @@ class BrapiProvider(MarketDataProvider):
                         code="NO_DATA_AVAILABLE",
                         message="Nenhum dado disponível",
                         details={"endpoint": endpoint, "ticker": params.get('ticker', '')}
-                    ).dict()
+                    ).model_dump()
                 )
             else:
                 raise HTTPException(
@@ -78,7 +78,7 @@ class BrapiProvider(MarketDataProvider):
                         code="API_ERROR",
                         message=f"Erro ao buscar dados da API: {str(e)}",
                         details={"status_code": e.response.status_code, "ticker": params.get('ticker', '')}
-                    ).dict()
+                    ).model_dump()
                 )
                 
         except httpx.RequestError as e:
@@ -88,7 +88,7 @@ class BrapiProvider(MarketDataProvider):
                     code="REQUEST_ERROR",
                     message=f"Erro ao fazer requisição: {str(e)}",
                     details={"error": str(e), "ticker": params.get('ticker', '')}
-                ).dict()
+                ).model_dump()
             )
     
     async def get_available_assets(self, search: Optional[str] = None) -> AssetList:
@@ -121,7 +121,7 @@ class BrapiProvider(MarketDataProvider):
                     code="NO_DATA_AVAILABLE",
                     message=f"Nenhum dado disponível para o ativo {ticker}",
                     details={"ticker": ticker}
-                ).dict()
+                ).model_dump()
             )
         
         result = data['results'][0]
