@@ -8,6 +8,7 @@ from backend.routes.market_routes import router as market_router
 from backend.config import DEBUG, LOG_LEVEL
 from backend.services.provider_manager import provider_manager
 from backend.models import APIResponse
+from backend.utils.response import ResponseUtil
 
 # Caminho relativo ao diretório de main.py
 log_dir = os.path.join(os.path.dirname(__file__), 'logs')
@@ -50,10 +51,11 @@ app.include_router(market_router)
 @app.get("/", response_model=APIResponse)
 async def read_root():
     """Rota raiz para verificar se a API está funcionando."""
-    return APIResponse(
-        success=True,
-        data={
-            "message": "API de dados de mercado financeiro está operacional!"
+    return ResponseUtil.success(
+        message="API de dados de mercado financeiro está operacional!",
+        metadata={
+            "version": "1.0.0",
+            "environment": "development" if DEBUG else "production"
         }
     )
 

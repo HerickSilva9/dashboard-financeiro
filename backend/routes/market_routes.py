@@ -5,6 +5,7 @@ from fastapi import status
 
 from backend.models import AssetList, HistoricalPrice, TimeRange, APIResponse, APIError
 from backend.services.provider_manager import provider_manager
+from backend.utils.response import ResponseUtil
 
 
 router = APIRouter(prefix="/market", tags=["market"])
@@ -26,28 +27,32 @@ async def get_available_assets(
     try:
         async with provider_manager.get_provider(route_name='get_available_assets') as data_provider:
             assets = await data_provider.get_available_assets(search)
-            return APIResponse(
-                success=True,
-                data=assets.model_dump()
+            return ResponseUtil.success(
+                data=assets.model_dump(),
+                message="Lista de ativos disponíveis recuperada com sucesso",
+                metadata={
+                    "search_term": search if search else "none",
+                    "provider": "brapi"
+                }
             )
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
-            content=APIResponse(
-                success=False,
-                error=APIError(**e.detail)
+            content=ResponseUtil.error(
+                code=e.detail.get("code", "PROVIDER_ERROR"),
+                message=e.detail.get("message", str(e)),
+                details=e.detail.get("details", {}),
+                status_code=e.status_code
             ).model_dump()
         )
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=APIResponse(
-                success=False,
-                error=APIError(
-                    code="INTERNAL_ERROR",
-                    message="Erro interno do servidor",
-                    details={"error": str(e)}
-                )
+            content=ResponseUtil.error(
+                code="INTERNAL_ERROR",
+                message="Erro interno do servidor",
+                details={"error": str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             ).model_dump()
         )
 
@@ -74,31 +79,32 @@ async def get_historical_prices(
         
         async with provider_manager.get_provider(route_name='get_historical_prices') as data_provider:
             prices = await data_provider.get_historical_prices(ticker, time_range)
-            return APIResponse(
-                success=True,
-                data=prices.model_dump()
+            return ResponseUtil.success(
+                data=prices.model_dump(),
+                message=f"Dados históricos recuperados com sucesso para {ticker}",
+                metadata={
+                    "range": range,
+                    "interval": interval,
+                    "provider": "yahoo"
+                }
             )
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
-            content=APIResponse(
-                success=False,
-                error=APIError(
-                    code="PROVIDER_ERROR",
-                    message=str(e),
-                    details={"route": "get_historical_prices", "ticker": ticker}
-                )
+            content=ResponseUtil.error(
+                code=e.detail.get("code", "PROVIDER_ERROR"),
+                message=e.detail.get("message", str(e)),
+                details=e.detail.get("details", {}),
+                status_code=e.status_code
             ).model_dump()
         )
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=APIResponse(
-                success=False,
-                error=APIError(
-                    code="INTERNAL_ERROR",
-                    message="Erro interno do servidor",
-                    details={"error": str(e)}
-                )
+            content=ResponseUtil.error(
+                code="INTERNAL_ERROR",
+                message="Erro interno do servidor",
+                details={"error": str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             ).model_dump()
         )

@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 import sys
 import os
+from datetime import datetime
 from backend.main import app  # Importa a API do arquivo principal
 from backend.services.provider_manager import ProviderManager
 from backend.providers.brapi_provider import BrapiProvider
@@ -60,19 +61,47 @@ async def test_provider_manager_get_provider():
     async with manager.get_provider(route_name='get_available_assets') as provider:
         assert isinstance(provider, BrapiProvider)
 
+def verify_response_structure(data):
+    """Função auxiliar para verificar a estrutura padrão da resposta"""
+    assert 'success' in data
+    assert 'data' in data
+    
+    if data['success']:
+        assert data['data'] is not None
+        assert 'timestamp' in data['data']
+        assert 'content' in data['data']
+        try:
+            datetime.fromisoformat(data['data']['timestamp'])
+        except ValueError:
+            pytest.fail("Timestamp não está em formato ISO")
+    else:
+        assert 'error' in data
+        assert data['error'] is not None
+        assert 'code' in data['error']
+        assert 'message' in data['error']
+        assert 'details' in data['error']
+        assert 'timestamp' in data['error']['details']
+        try:
+            datetime.fromisoformat(data['error']['details']['timestamp'])
+        except ValueError:
+            pytest.fail("Timestamp do erro não está em formato ISO")
+
 # Teste para /available_assets (provedor padrão: brapi)
 def test_brapi_available_assets():
     """Testa a rota /available_assets com o provedor Brapi"""
     response = client.get('/market/assets')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'stocks' in data['data']
-    assert 'indexes' in data['data']
-    assert isinstance(data['data']['stocks'], list)
-    assert isinstance(data['data']['indexes'], list)
+    
+    content = data['data']['content']
+    assert isinstance(content, dict)
+    assert 'stocks' in content
+    assert 'indexes' in content
+    assert isinstance(content['stocks'], list)
+    assert isinstance(content['indexes'], list)
 
 # Teste para /available_assets com termo de busca
 def test_brapi_available_assets_with_search():
@@ -80,13 +109,17 @@ def test_brapi_available_assets_with_search():
     response = client.get('/market/assets?search=PETR')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'stocks' in data['data']
-    assert 'indexes' in data['data']
-    assert isinstance(data['data']['stocks'], list)
-    assert isinstance(data['data']['indexes'], list)
+    
+    content = data['data']['content']
+    assert isinstance(content, dict)
+    assert 'stocks' in content
+    assert 'indexes' in content
+    assert isinstance(content['stocks'], list)
+    assert isinstance(content['indexes'], list)
+    assert any('PETR' in stock for stock in content['stocks'])
 
 # Teste para /available_assets com termo de busca inválido
 def test_brapi_available_assets_invalid_search():
@@ -94,12 +127,15 @@ def test_brapi_available_assets_invalid_search():
     response = client.get('/market/assets?search=XYZ123')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'stocks' in data['data']
-    assert 'indexes' in data['data']
-    assert isinstance(data['data']['stocks'], list)
-    assert isinstance(data['data']['indexes'], list)
-    assert len(data['data']['stocks']) == 0
-    assert len(data['data']['indexes']) == 0
+    
+    content = data['data']['content']
+    assert isinstance(content, dict)
+    assert 'stocks' in content
+    assert 'indexes' in content
+    assert isinstance(content['stocks'], list)
+    assert isinstance(content['indexes'], list)
+    assert len(content['stocks']) == 0
+    assert len(content['indexes']) == 0

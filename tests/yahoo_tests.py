@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 import sys
 import os
+from datetime import datetime
 from backend.main import app
 from backend.services.provider_manager import ProviderManager
 from backend.providers.yahoo_provider import YahooProvider
@@ -9,6 +10,31 @@ from dotenv import load_dotenv
 
 # Configuração do cliente de teste da API
 client = TestClient(app)
+
+def verify_response_structure(data):
+    """Função auxiliar para verificar a estrutura padrão da resposta"""
+    assert 'success' in data
+    assert 'data' in data
+    
+    if data['success']:
+        assert data['data'] is not None
+        assert 'timestamp' in data['data']
+        assert 'content' in data['data']
+        try:
+            datetime.fromisoformat(data['data']['timestamp'])
+        except ValueError:
+            pytest.fail("Timestamp não está em formato ISO")
+    else:
+        assert 'error' in data
+        assert data['error'] is not None
+        assert 'code' in data['error']
+        assert 'message' in data['error']
+        assert 'details' in data['error']
+        assert 'timestamp' in data['error']['details']
+        try:
+            datetime.fromisoformat(data['error']['details']['timestamp'])
+        except ValueError:
+            pytest.fail("Timestamp do erro não está em formato ISO")
 
 def test_env_file_exists():
     """Testa se o arquivo .env existe e contém as variáveis necessárias."""
@@ -39,15 +65,18 @@ def test_yahoo_ticker_quote():
     response = client.get('/market/prices/PETR4?range=5d&interval=1d')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'symbol' in data['data']
-    assert 'name' in data['data']
-    assert 'currency' in data['data']
-    assert 'prices' in data['data']
-    assert isinstance(data['data']['prices'], list)
-    assert len(data['data']['prices']) > 0
+    
+    content = data['data']['content']
+    assert isinstance(content, dict)
+    assert 'symbol' in content
+    assert 'name' in content
+    assert 'currency' in content
+    assert 'prices' in content
+    assert isinstance(content['prices'], list)
+    assert len(content['prices']) > 0
 
 # Teste para /quote/{ticker} com ticker inválido
 def test_yahoo_ticker_quote_invalid():
@@ -55,10 +84,13 @@ def test_yahoo_ticker_quote_invalid():
     response = client.get('/market/prices/XYZ123?range=5d&interval=1d')
     assert response.status_code == 404
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == False
     assert 'error' in data
     error = data['error']
-    assert error['code'] == 'PROVIDER_ERROR'
+    assert error['code'] == 'ASSET_NOT_FOUND'
+    assert 'timestamp' in error['details']
 
 # Teste para /quote/{ticker} com diferentes intervalos
 def test_yahoo_ticker_quote_different_intervals():
@@ -66,15 +98,18 @@ def test_yahoo_ticker_quote_different_intervals():
     response = client.get('/market/prices/PETR4?range=5d&interval=1h')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'symbol' in data['data']
-    assert 'name' in data['data']
-    assert 'currency' in data['data']
-    assert 'prices' in data['data']
-    assert isinstance(data['data']['prices'], list)
-    assert len(data['data']['prices']) > 0
+    
+    content = data['data']['content']
+    assert isinstance(content, dict)
+    assert 'symbol' in content
+    assert 'name' in content
+    assert 'currency' in content
+    assert 'prices' in content
+    assert isinstance(content['prices'], list)
+    assert len(content['prices']) > 0
 
 # Teste para /quote/{ticker} com diferentes ranges
 def test_yahoo_ticker_quote_different_ranges():
@@ -82,15 +117,18 @@ def test_yahoo_ticker_quote_different_ranges():
     response = client.get('/market/prices/PETR4?range=1mo&interval=1d')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'symbol' in data['data']
-    assert 'name' in data['data']
-    assert 'currency' in data['data']
-    assert 'prices' in data['data']
-    assert isinstance(data['data']['prices'], list)
-    assert len(data['data']['prices']) > 0
+    
+    content = data['data']['content']
+    assert isinstance(content, dict)
+    assert 'symbol' in content
+    assert 'name' in content
+    assert 'currency' in content
+    assert 'prices' in content
+    assert isinstance(content['prices'], list)
+    assert len(content['prices']) > 0
 
 # Teste para verificar se o sufixo .SA é adicionado corretamente
 def test_yahoo_ticker_suffix():
@@ -98,9 +136,12 @@ def test_yahoo_ticker_suffix():
     response = client.get('/market/prices/PETR4?range=5d&interval=1d')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert data['data']['symbol'] == 'PETR4.SA'
+    
+    content = data['data']['content']
+    assert content['symbol'] == 'PETR4.SA'
 
 # Teste para verificar se o sufixo .SA não é duplicado
 def test_yahoo_ticker_suffix_no_duplicate():
@@ -108,6 +149,9 @@ def test_yahoo_ticker_suffix_no_duplicate():
     response = client.get('/market/prices/PETR4.SA?range=5d&interval=1d')
     assert response.status_code == 200
     data = response.json()
+    
+    verify_response_structure(data)
     assert data['success'] == True
-    assert 'data' in data
-    assert data['data']['symbol'] == 'PETR4.SA' 
+    
+    content = data['data']['content']
+    assert content['symbol'] == 'PETR4.SA' 
