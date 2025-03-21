@@ -58,17 +58,6 @@ async def test_provider_manager_get_provider():
     # Testa provedor padrão para get_available_assets
     async with manager.get_provider(route_name='get_available_assets') as provider:
         assert isinstance(provider, BrapiProvider)
-    
-    # Testa provedor específico
-    async with manager.get_provider('brapi') as provider:
-        assert isinstance(provider, BrapiProvider)
-
-@pytest.mark.asyncio
-async def test_provider_manager_invalid_provider():
-    manager = ProviderManager()
-    with pytest.raises(ValueError):
-        async with manager.get_provider('invalid_provider') as _:
-            pass
 
 # Teste para a rota raiz (/)
 def test_read_root():
@@ -156,7 +145,7 @@ def test_ticker_quote_different_range():
 
 # Teste para /quote_list com parâmetros válidos
 def test_quote_list():
-    response = client.get('/market/assets?search=TR&provider=brapi')
+    response = client.get('/market/assets?search=TR')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
@@ -170,7 +159,7 @@ def test_quote_list():
 
 # Teste para /quote_list com busca inválida
 def test_quote_list_invalid():
-    response = client.get('/market/assets?search=INVALIDO&provider=brapi')
+    response = client.get('/market/assets?search=INVALIDO')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
@@ -184,7 +173,7 @@ def test_quote_list_invalid():
 
 # Teste para /quote_list com limite diferente
 def test_quote_list_with_limit():
-    response = client.get('/market/assets?provider=brapi')
+    response = client.get('/market/assets')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True

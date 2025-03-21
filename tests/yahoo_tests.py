@@ -34,14 +34,10 @@ async def test_provider_manager_yahoo_get_provider():
     # Testa provedor padrão para get_historical_prices
     async with manager.get_provider(route_name='get_historical_prices') as provider:
         assert isinstance(provider, YahooProvider)
-    
-    # Testa provedor específico
-    async with manager.get_provider('yahoo') as provider:
-        assert isinstance(provider, YahooProvider)
 
 # Teste para /available_assets com Yahoo Finance
 def test_yahoo_available_assets():
-    response = client.get('/market/assets?provider=yahoo')
+    response = client.get('/market/assets')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
@@ -131,15 +127,4 @@ def test_yahoo_ticker_suffix_no_duplicate():
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
-    assert data['data']['results'][0]['symbol'] == 'PETR4.SA'
-
-# Teste para provedor inválido
-def test_invalid_provider():
-    response = client.get('/market/prices/PETR4?provider=invalid_provider')
-    assert response.status_code == 400
-    data = response.json()
-    assert data['success'] == False
-    assert 'error' in data
-    error = data['error']
-    assert error['code'] == 'INVALID_PROVIDER'
-    assert 'Provider' in error['message'] 
+    assert data['data']['results'][0]['symbol'] == 'PETR4.SA' 

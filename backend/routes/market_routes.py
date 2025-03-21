@@ -12,37 +12,24 @@ router = APIRouter(prefix="/market", tags=["market"])
 
 @router.get("/assets", response_model=APIResponse)
 async def get_available_assets(
-    search: Optional[str] = Query(None, description="Termo de busca para filtrar ativos"),
-    provider: Optional[str] = Query(None, description="Nome do provedor de dados a ser usado")
+    search: Optional[str] = Query(None, description="Termo de busca para filtrar ativos")
 ):
     """
     Retorna a lista de ativos disponíveis.
     
     Args:
         search: Termo de busca opcional para filtrar os resultados.
-        provider: Nome do provedor de dados (opcional).
         
     Returns:
         APIResponse contendo a lista de ativos.
     """
     try:
-        async with provider_manager.get_provider(provider, route_name='get_available_assets') as data_provider:
+        async with provider_manager.get_provider(route_name='get_available_assets') as data_provider:
             assets = await data_provider.get_available_assets(search)
             return APIResponse(
                 success=True,
                 data=assets.dict()
             )
-    except ValueError as e:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=APIResponse(
-                success=False,
-                error=APIError(
-                    code="INVALID_PROVIDER",
-                    message=str(e)
-                )
-            ).dict()
-        )
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
@@ -69,8 +56,7 @@ async def get_available_assets(
 async def get_historical_prices(
     ticker: str,
     range: str = Query("1d", description="Intervalo de tempo para os dados históricos"),
-    interval: Optional[str] = Query(None, description="Intervalo entre pontos de dados"),
-    provider: Optional[str] = Query(None, description="Nome do provedor de dados a ser usado")
+    interval: Optional[str] = Query(None, description="Intervalo entre pontos de dados")
 ):
     """
     Retorna os preços históricos para um ativo específico.
@@ -79,7 +65,6 @@ async def get_historical_prices(
         ticker: Símbolo do ativo.
         range: Intervalo de tempo para os dados históricos (ex: 1d, 5d, 1mo, 1y).
         interval: Intervalo entre pontos de dados (ex: 1m, 5m, 1h, 1d).
-        provider: Nome do provedor de dados (opcional).
         
     Returns:
         APIResponse contendo os dados históricos de preços.
@@ -87,7 +72,7 @@ async def get_historical_prices(
     try:
         time_range = TimeRange(range=range, interval=interval)
         
-        async with provider_manager.get_provider(provider, route_name='get_historical_prices') as data_provider:
+        async with provider_manager.get_provider(route_name='get_historical_prices') as data_provider:
             prices = await data_provider.get_historical_prices(ticker, time_range)
             return APIResponse(
                 success=True,
@@ -110,17 +95,6 @@ async def get_historical_prices(
                     }]
                 }
             )
-    except ValueError as e:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=APIResponse(
-                success=False,
-                error=APIError(
-                    code="INVALID_PROVIDER",
-                    message=str(e)
-                )
-            ).dict()
-        )
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
