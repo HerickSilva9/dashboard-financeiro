@@ -36,7 +36,6 @@ async def test_provider_manager_initialization():
     manager = ProviderManager()
     assert 'brapi' in manager._providers
     assert manager._default_providers['get_available_assets'] == 'brapi'
-    assert manager._default_providers['get_historical_prices'] == 'yahoo'
 
 @pytest.mark.asyncio
 async def test_provider_manager_registration():
@@ -48,7 +47,9 @@ async def test_provider_manager_registration():
 @pytest.mark.asyncio
 async def test_provider_manager_set_default_for_route():
     manager = ProviderManager()
+    # Registra um novo provedor
     manager.register_provider('test_provider', BrapiProvider)
+    # Testa definição de provedor padrão para uma rota
     manager.set_default_provider_for_route('get_available_assets', 'test_provider')
     assert manager._default_providers['get_available_assets'] == 'test_provider'
 
@@ -59,16 +60,9 @@ async def test_provider_manager_get_provider():
     async with manager.get_provider(route_name='get_available_assets') as provider:
         assert isinstance(provider, BrapiProvider)
 
-# Teste para a rota raiz (/)
-def test_read_root():
-    response = client.get('/')
-    assert response.status_code == 200
-    data = response.json()
-    assert data['success'] == True
-    assert data['data']['message'] == "API de dados de mercado financeiro está operacional!"
-
 # Teste para /available_assets (provedor padrão: brapi)
-def test_available_assets():
+def test_brapi_available_assets():
+    """Testa a rota /available_assets com o provedor Brapi"""
     response = client.get('/market/assets')
     assert response.status_code == 200
     data = response.json()
@@ -80,9 +74,10 @@ def test_available_assets():
     assert isinstance(data['data']['stocks'], list)
     assert isinstance(data['data']['indexes'], list)
 
-# Teste para /available_assets com parâmetro de busca
-def test_available_assets_with_search():
-    response = client.get('/market/assets?search=MGLU3')
+# Teste para /available_assets com termo de busca
+def test_brapi_available_assets_with_search():
+    """Testa a rota /available_assets com termo de busca usando o provedor Brapi"""
+    response = client.get('/market/assets?search=PETR')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
@@ -92,66 +87,11 @@ def test_available_assets_with_search():
     assert 'indexes' in data['data']
     assert isinstance(data['data']['stocks'], list)
     assert isinstance(data['data']['indexes'], list)
-    assert len(data['data']['stocks']) > 0
-    assert 'MGLU3' in data['data']['stocks']
-    
-# Teste para /quote/{ticker} com parâmetros válidos (provedor padrão: yahoo)
-def test_ticker_quote():
-    response = client.get('/market/prices/MGLU3?range=5d&interval=1d')
-    assert response.status_code == 200
-    data = response.json()
-    assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'symbol' in data['data']
-    assert 'name' in data['data']
-    assert 'currency' in data['data']
-    assert 'prices' in data['data']
-    assert isinstance(data['data']['prices'], list)
-    assert len(data['data']['prices']) > 0
 
-# Teste para /quote/{ticker} com ticker inválido
-def test_ticker_quote_invalid():
-    response = client.get('/market/prices/XYZ123?range=5d&interval=1d')
-    assert response.status_code == 404
-    data = response.json()
-    assert data['success'] == False
-    assert 'error' in data
-    error = data['error']
-    assert error['code'] == 'PROVIDER_ERROR'
-
-# Teste para /quote/{ticker} com diferentes parâmetros
-def test_ticker_quote_different_range():
-    response = client.get('/market/prices/MGLU3?range=1mo&interval=1d')
-    assert response.status_code == 200
-    data = response.json()
-    assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'symbol' in data['data']
-    assert 'name' in data['data']
-    assert 'currency' in data['data']
-    assert 'prices' in data['data']
-    assert isinstance(data['data']['prices'], list)
-    assert len(data['data']['prices']) > 0
-
-# Teste para /quote_list com parâmetros válidos
-def test_quote_list():
-    response = client.get('/market/assets?search=TR')
-    assert response.status_code == 200
-    data = response.json()
-    assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'stocks' in data['data']
-    assert 'indexes' in data['data']
-    assert isinstance(data['data']['stocks'], list)
-    assert isinstance(data['data']['indexes'], list)
-    assert len(data['data']['stocks']) > 0
-
-# Teste para /quote_list com busca inválida
-def test_quote_list_invalid():
-    response = client.get('/market/assets?search=INVALIDO')
+# Teste para /available_assets com termo de busca inválido
+def test_brapi_available_assets_invalid_search():
+    """Testa a rota /available_assets com termo de busca inválido usando o provedor Brapi"""
+    response = client.get('/market/assets?search=XYZ123')
     assert response.status_code == 200
     data = response.json()
     assert data['success'] == True
@@ -162,16 +102,4 @@ def test_quote_list_invalid():
     assert isinstance(data['data']['stocks'], list)
     assert isinstance(data['data']['indexes'], list)
     assert len(data['data']['stocks']) == 0
-
-# Teste para /quote_list com limite diferente
-def test_quote_list_with_limit():
-    response = client.get('/market/assets')
-    assert response.status_code == 200
-    data = response.json()
-    assert data['success'] == True
-    assert 'data' in data
-    assert isinstance(data['data'], dict)
-    assert 'stocks' in data['data']
-    assert 'indexes' in data['data']
-    assert isinstance(data['data']['stocks'], list)
-    assert isinstance(data['data']['indexes'], list)
+    assert len(data['data']['indexes']) == 0

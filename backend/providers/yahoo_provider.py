@@ -21,22 +21,6 @@ class YahooProvider(MarketDataProvider):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         pass
     
-    def _convert_yahoo_interval(self, interval: Optional[str]) -> str:
-        """Converte o intervalo do formato da API para o formato do Yahoo Finance."""
-        if not interval:
-            return "1d"
-        
-        interval_map = {
-            "1m": "1m",
-            "5m": "5m",
-            "15m": "15m",
-            "30m": "30m",
-            "1h": "1h",
-            "1d": "1d",
-            "1wk": "1wk",
-            "1mo": "1mo"
-        }
-        return interval_map.get(interval, "1d")
     
     def _convert_yahoo_range(self, range: str) -> str:
         """Converte o range do formato da API para o formato do Yahoo Finance."""
@@ -54,15 +38,23 @@ class YahooProvider(MarketDataProvider):
             "max": "max"
         }
         return range_map.get(range, "1d")
-    
-    async def get_available_assets(self, search: Optional[str] = None) -> AssetList:
-        """Retorna uma lista de ativos disponíveis."""
-        # A Yahoo Finance não fornece uma API direta para listar ativos disponíveis
-        # Vamos retornar uma lista vazia e deixar a busca ser feita diretamente
-        return AssetList(
-            indexes=[],
-            stocks=[]
-        )
+
+    def _convert_yahoo_interval(self, interval: Optional[str]) -> str:
+        """Converte o intervalo do formato da API para o formato do Yahoo Finance."""
+        if not interval:
+            return "1d"
+        
+        interval_map = {
+            "1m": "1m",
+            "5m": "5m",
+            "15m": "15m",
+            "30m": "30m",
+            "1h": "1h",
+            "1d": "1d",
+            "1wk": "1wk",
+            "1mo": "1mo"
+        }
+        return interval_map.get(interval, "1d")
     
     async def get_historical_prices(self, ticker: str, time_range: TimeRange) -> HistoricalPrice:
         """Retorna preços históricos para um ticker específico."""
