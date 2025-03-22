@@ -108,3 +108,56 @@ async def get_historical_prices(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             ).model_dump()
         )
+
+
+@router.get("/indicators/{ticker}", response_model=APIResponse)
+async def get_market_indicators(ticker: str):
+    """
+    Retorna indicadores de mercado para um ativo específico.
+    
+    Args:
+        ticker: Símbolo do ativo.
+        
+    Returns:
+        APIResponse contendo os indicadores de mercado.
+    """
+    try:
+        async with provider_manager.get_provider(route_name='get_market_indicators') as data_provider:
+            indicators = await data_provider.get_market_indicators(ticker)
+            
+            # Prepara os metadados
+            metadata = {
+                "provider": "yahoo"
+            }
+            
+            # Se houver metadados do provider, inclui no metadata da resposta
+            if "_metadata" in indicators:
+                provider_metadata = indicators.pop("_metadata")
+                metadata.update(provider_metadata)
+            
+            return ResponseUtil.success(
+                data=indicators,
+                message=f"Indicadores recuperados com sucesso para {ticker}",
+                metadata=metadata
+            )
+            
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content=ResponseUtil.error(
+                code=e.detail.get("code", "PROVIDER_ERROR"),
+                message=e.detail.get("message", str(e)),
+                details=e.detail.get("details", {}),
+                status_code=e.status_code
+            ).model_dump()
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=ResponseUtil.error(
+                code="INTERNAL_ERROR",
+                message="Erro interno do servidor",
+                details={"error": str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ).model_dump()
+        )

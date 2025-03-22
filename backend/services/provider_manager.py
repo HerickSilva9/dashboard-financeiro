@@ -20,7 +20,8 @@ class ProviderManager:
         # Provedores padrão por rota
         self._default_providers: Dict[str, str] = {
             'get_available_assets': 'brapi',
-            'get_historical_prices': 'yahoo'
+            'get_historical_prices': 'yahoo',
+            'get_market_indicators': 'yahoo'
         }
     
     def register_provider(self, name: str, provider_class: Type[MarketDataProvider]) -> None:
